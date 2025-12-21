@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>vile.today</title>
+
+  <link rel="icon" type="image/x-icon" href="files/heykitty.ico">
+
+  <link rel="preload" href="style.css" as="style">
+  <link rel="stylesheet" href="style.css">
+
+  <link rel="preload" as="video" href="files/glorp.mp4" type="video/mp4">
+  <link rel="preload" as="image" href="files/xxx.jpg">
+  <link rel="preload" as="image" href="files/eye.png">
+  <link rel="preload" as="image" href="files/tiktok.png">
+  <link rel="preload" as="image" href="files/roblox.png">
+  <link rel="preload" as="audio" href="files/memories.mp3">
+</head>
+
+<body>
+  <div id="bg-wrapper">
+    <video id="bg-video" autoplay muted loop playsinline preload="auto">
+      <source src="files/glorp.mp4" type="video/mp4">
+    </video>
+  </div>
+
+  <div id="overlay">
+    <div id="glass-group">
+
+      <div class="glass-card" id="main-card">
+        <div class="top-row">
+          <img class="profile-pic" src="files/xxx.jpg" alt="Profile">
+          <div class="user-and-badges">
+            <span class="username">River</span>
+            <span class="separator">•</span>
+            <div class="badges">
+              <img src="files/badge1.gif" alt="badge 1" loading="lazy">
+              <img src="files/badge1.gif" alt="badge 2" loading="lazy">
+              <img src="files/badge1.gif" alt="badge 3" loading="lazy">
+            </div>
+          </div>
+        </div>
+        <div id="visitor-count" aria-label="Visitor count">
+          <img src="files/eye.png" alt="views">
+          <span id="visitor-num">1891</span>
+        </div>
+        <div class="description">Hello!!</div>
+
+        <div class="social-links">
+          <a href="https://doxbin.net/home" target="_blank" rel="noopener">
+            <img src="files/dx.png" alt="TikTok">
+          </a>
+          <a href="https://doxbin.com/home" target="_blank" rel="noopener">
+            <img src="files/dx.png" alt="Roblox">
+          </a>
+          <a href="https://www.instagram.com/cried140/" aria-label="Discord">
+            <img src="files/igh.png" alt="discord logo">
+          </a>
+        </div>
+      </div>
+
+      <div class="audio-panel" id="audio-panel">
+        <div class="custom-audio">
+          <div class="vinyl">
+            <img id="vinyl-img" src="files/cover.jpg" alt="vinyl cover">
+          </div>
+
+          <button id="playPauseBtn" class="audio-btn" aria-label="Play/Pause">❚❚</button>
+          <button id="skipBtn" class="audio-btn" aria-label="Next track">⤳</button>
+
+          <input id="seekbar" type="range" min="0" max="100" value="0" aria-label="Seekbar">
+          <span id="time-display">00:00 / 00:00</span>
+          <input id="volumeSlider" class="volume-slider" type="range" min="0" max="1" step="0.01" value="1" aria-label="Volume">
+        </div>
+
+        <audio id="bg-audio" preload="metadata"></audio>
+      </div>
+    </div>
+  </div>
+
+  <div class="cursor-circle" id="cursor-circle"></div>
+  <div id="splash"><h1>&lt;loading...&gt;</h1></div>
+
+<script defer>
+const $ = s => document.querySelector(s);
+const audio = $("#bg-audio");
+const playBtn = $("#playPauseBtn");
+const skipBtn = $("#skipBtn");
+const seek = $("#seekbar");
+const timeDisplay = $("#time-display");
+const volumeSlider = $("#volumeSlider");
+const vinylImg = $("#vinyl-img");
+const splash = $("#splash");
+const audioPanel = $("#audio-panel");
+const glassGroup = $("#glass-group");
+const overlay = $("#overlay");
+const cursorCircle = $("#cursor-circle");
+
+const playlist = [
+  { src: "files/nintendo.mp3", cover: "files/nintendo.webp" },
+  { src: "files/notanywhere.mp3", cover: "files/notanywhere.webp" },
+  { src: "files/hey.mp3", cover: "files/cd.gif" }
+];
+
+let currentTrack = 0;
+audio.src = playlist[currentTrack].src;
+vinylImg.src = playlist[currentTrack].cover;
+
+const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+if (!isTouch) {
+  document.addEventListener("mousemove", e => {
+    cursorCircle.style.left = e.clientX + "px";
+    cursorCircle.style.top = e.clientY + "px";
+  });
+
+  const tiltStrength = 10;
+  let rafId = null;
+
+  overlay.addEventListener("mousemove", e => {
+    cancelAnimationFrame(rafId);
+    rafId = requestAnimationFrame(() => {
+      const rect = overlay.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+      const dx = (e.clientX - cx) / (rect.width / 2);
+      const dy = (e.clientY - cy) / (rect.height / 2);
+      const rotateY = dx * tiltStrength;
+      const rotateX = -dy * tiltStrength;
+      glassGroup.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    });
+  });
+
+  overlay.addEventListener("mouseleave", () => {
+    glassGroup.style.transform = "rotateX(0) rotateY(0)";
+  });
+}
+
+const startExperience = async () => {
+  splash.classList.add("hidden");
+  setTimeout(async () => {
+    audioPanel.classList.add("visible");
+    audio.volume = 0;
+    let autoplayWorked = false;
+
+    try {
+      await audio.play();
+      fadeAudio(volumeSlider.value, 1000);
+      autoplayWorked = true;
+    } catch {}
+
+    if (!autoplayWorked) {
+      const tryPlay = async (reason) => {
+        try {
+          await audio.play();
+          fadeAudio(volumeSlider.value, 800);
+        } catch {}
+      };
+
+      const cleanup = () => {
+        document.removeEventListener("click", clickHandler);
+        document.removeEventListener("keydown", keyHandler);
+        document.removeEventListener("scroll", scrollHandler);
+        document.removeEventListener("visibilitychange", visibilityHandler);
+        if (promptMsg) promptMsg.remove();
+      };
+
+      const clickHandler = () => tryPlay("click");
+      const keyHandler = () => tryPlay("keypress");
+      const scrollHandler = () => tryPlay("scroll");
+      const visibilityHandler = () => {
+        if (document.visibilityState === "visible") tryPlay("tab focus");
+      };
+
+      document.addEventListener("click", clickHandler, { once: true });
+      document.addEventListener("keydown", keyHandler, { once: true });
+      document.addEventListener("scroll", scrollHandler, { once: true });
+      document.addEventListener("visibilitychange", visibilityHandler);
+
+      const promptMsg = document.createElement("div");
+      promptMsg.textContent = "🔊 Click anywhere to start audio";
+      promptMsg.id = "audio-hint";
+      document.body.appendChild(promptMsg);
+    }
+  }, 800);
+};
+
+window.addEventListener("load", () => {
+  startExperience();
+  fetchVisitorCount();
+});
+
+// Static visitor count placeholder (replaces PHP)
+async function fetchVisitorCount() {
+  try {
+    const data = { count: 1891 }; // static count
+    $("#visitor-num").textContent = data.count ?? 0;
+  } catch {}
+}
+
+const fadeAudio = (to, dur=500) => new Promise(r=>{
+  const start = audio.volume, delta = to - start, t0 = performance.now();
+  const step = t => {
+    const p = Math.min((t-t0)/dur,1);
+    audio.volume = start + delta*p;
+    p<1?requestAnimationFrame(step):r();
+  };
+  requestAnimationFrame(step);
+});
+
+const switchTrack = async i => {
+  vinylImg.classList.add("fade-out");
+  await fadeAudio(0,300);
+  currentTrack = i;
+  audio.src = playlist[i].src;
+  vinylImg.src = playlist[i].cover;
+  await audio.play().catch(()=>{});
+  fadeAudio(volumeSlider.value,400);
+  setTimeout(()=>vinylImg.classList.remove("fade-out"),200);
+};
+
+skipBtn.addEventListener("click", ()=> switchTrack((currentTrack+1)%playlist.length));
+audio.addEventListener("ended", ()=> switchTrack((currentTrack+1)%playlist.length));
+
+playBtn.addEventListener("click", ()=>{
+  if (audio.paused){ audio.play(); playBtn.textContent="❚❚"; }
+  else { audio.pause(); playBtn.textContent="▶"; }
+});
+
+audio.addEventListener("timeupdate", ()=>{
+  const p = (audio.currentTime/audio.duration)*100 || 0;
+  seek.value = p;
+  seek.style.setProperty("--progress", `${p}%`);
+  timeDisplay.textContent = `${fmt(audio.currentTime)} / ${fmt(audio.duration)}`;
+});
+
+seek.addEventListener("input", ()=> audio.currentTime = (seek.value/100)*audio.duration);
+volumeSlider.addEventListener("input", ()=> audio.volume = volumeSlider.value);
+
+const fmt = s => {
+  if(!s||isNaN(s))return"00:00";
+  const m=Math.floor(s/60), sec=Math.floor(s%60);
+  return `${m.toString().padStart(2,"0")}:${sec.toString().padStart(2,"0")}`;
+};
+</script>
+</body>
+</html>
